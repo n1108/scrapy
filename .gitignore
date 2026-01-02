@@ -1,0 +1,50 @@
+# ==========================
+# Python 基础忽略规则
+# ==========================
+# 字节码文件，不需要提交
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境 (如果你创建了)
+venv/
+env/
+.env/
+
+# ==========================
+# Scrapy 框架忽略规则
+# ==========================
+# Scrapy 的缓存目录
+.scrapy/
+# 爬虫运行时产生的日志文件
+*.log
+
+# ==========================
+# IDE / 编辑器配置 (个人配置不需要提交)
+# ==========================
+# PyCharm
+.idea/
+# VS Code
+.vscode/
+# Mac 系统文件
+.DS_Store
+
+# ==========================
+# 项目特定数据 (关键部分)
+# ==========================
+# 根据你的代码 analysis，这些目录存放了爬取的数据和处理结果，不应提交到仓库
+
+# 1. 忽略所有 Numpy 二进制数据文件
+*.npy
+
+# 2. 忽略 counselor/pipelines.py 和 data_process/process.py 生成的数据目录
+# 你的代码中出现了 'origin_page' 和 'orgin_page'(可能是笔误)，建议都忽略
+origin_page/
+orgin_page/
+
+# 3. 忽略 data_process 目录下的处理结果文件夹
+data_process/process/
+data_process/origin_page/
+
+# 4. 如果根目录下也有 process 文件夹
+process/
