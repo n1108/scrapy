@@ -5,7 +5,7 @@ import os
 # 配置路径
 input_file = './process/wiki_knowledge.npy'
 output_file = './process/wiki_knowledge_readable.json' # 输出文件名
-LIMIT = 6  # 指定导出的条数，设置为 None 或 0 则导出全部
+LIMIT = 15  # 指定导出的条数，设置为 None 或 0 则导出全部
 
 # 自定义 JSON 编码器
 # 作用：把 Python 的 set (集合) 类型自动转换为 list (列表)，否则 JSON 无法保存

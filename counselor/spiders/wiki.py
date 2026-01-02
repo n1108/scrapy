@@ -4,6 +4,7 @@ from scrapy.selector import Selector
 from items import ContentItem
 from custom_queue import Queue
 import time
+import re
 from langconv import *
 from filter_words import filter_url
 
@@ -155,9 +156,21 @@ class WiKiSpider(scrapy.Spider):
 
         content_entity = Traditional2Simplified(content_entity)
 
-        # 3. 获取内容主体 (修复：使用 contains 匹配 class，因为 class 可能包含 mw-content-ltr 等其他属性)
-        # 我们直接查找带有 mw-parser-output 类的 div，这是最核心的内容区
-        content_page = response.xpath("//div[contains(@class, 'mw-parser-output')]").extract_first()
+        # 3. 获取内容主体 (修复：获取所有包含 mw-parser-output 类的 div 并拼接)
+        # 维基百科有时会把内容拆分到多个此类 div 中，或者第一个 div 仅仅是语言转换提示
+        content_pages = response.xpath("//div[contains(@class, 'mw-parser-output')]").extract()
+        if not content_pages:
+            print(f"Warning: No content found in {this_url}")
+            return None
+        
+        # 简单清理：使用正则表达式移除 style 和 script 标签及其内容，减少数据体积
+        cleaned_pages = []
+        for page in content_pages:
+            page = re.sub(r'<style.*?>.*?</style>', '', page, flags=re.DOTALL | re.IGNORECASE)
+            page = re.sub(r'<script.*?>.*?</script>', '', page, flags=re.DOTALL | re.IGNORECASE)
+            cleaned_pages.append(page)
+        
+        content_page = "\n".join(cleaned_pages)
         
         # 4. 获取分类 (保持不变)
         cates = response.xpath("//div[@id='catlinks']//ul//a/text()").extract()
