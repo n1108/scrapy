@@ -174,7 +174,19 @@ def extract_paragraph(content):
 
 def process_html(content):
     content = etree.HTML(content) # lxml的etree类的HTML可以补全html标签，并生成python对象
-    content = content.xpath("//div[@class='mw-parser-output']")[0]
+
+    # content = content.xpath("//div[@class='mw-parser-output']")[0]
+
+    # === 修改 1: 使用 contains 匹配，适配新的维基百科 class 结构 ===
+    divs = content.xpath("//div[contains(@class, 'mw-parser-output')]")
+    
+    # === 修改 2: 增加安全检查，防止文件内容不完整导致程序崩溃 ===
+    if len(divs) == 0:
+        # 如果找不到内容 div，返回空数据，而不是让程序报错退出
+        return {}, [], {'abstract': [], 'paragraphs': {}, 'entities': set()}
+        
+    content = divs[0]
+
     ##### 维基百科页面中的侧边栏中有一些结构化的表，table表的class="infobox"，可以直接取来作为结构化的数据，用于知识图谱
     infobox_know = extract_infobox(content)
     ##### 维基百科的每个内容最后一栏叫做相关条目（查，论，编）（如果存在的话）一般会列出与当前实体有关的其他实体。表头一般是整个大类，表格
@@ -190,21 +202,21 @@ def process_html(content):
 
 
 
-def read_files(orgin_page, save_path):
+def read_files(origin_page, save_path):
     # 读取所有处理的数据集
-    if not os.path.isdir(orgin_page):
+    if not os.path.isdir(origin_page):
         raise Exception("请给出合法的目录")
     wiki_knowledge = []
     if os.path.exists(save_path + 'wiki_knowledge.npy'):
         # wiki_knowledge = (np.load('wiki_knowledge.npy')[()]).tolist()
         pass
-    files = os.listdir(orgin_page)
+    files = os.listdir(origin_page)
     # files = ['快速排序.txt']
     num = 0
     for file in tqdm(files):
         if file[-4:] != '.txt':
             continue
-        with open(orgin_page + file, 'r', encoding='utf-8') as fr:
+        with open(origin_page + file, 'r', encoding='utf-8') as fr:
             lines = fr.readlines()
         entity_title = Traditional2Simplified(lines[0][3:].replace('\n', ''))
         category_list = Traditional2Simplified(lines[1][3:].replace('\n', '').split('\t'))
@@ -232,8 +244,8 @@ def read_files(orgin_page, save_path):
 
 
 if __name__ == '__main__':
-    orgin_page = './origin_page/'
+    origin_page = './origin_page/'
     save_path = './process/'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    read_files(orgin_page, save_path)
+    read_files(origin_page, save_path)

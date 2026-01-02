@@ -9,14 +9,22 @@ class Queue():
     # self.max_num = max_num # 保存最多可
     save_every = 100 # has_viewd每100次执行一次保存以记录
     # 初始化时需要添加若干个入口请求
-    candidates.append('https://zh.wikipedia.org/wiki/Category:%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BC%96%E7%A8%8B')
+    # candidates.append('https://zh.wikipedia.org/wiki/Category:%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BC%96%E7%A8%8B')
+    # 经济
+    candidates.append('https://zh.wikipedia.org/wiki/Category:%E7%BB%8F%E6%B5%8E')
+    # 经济学
+    candidates.append('https://zh.wikipedia.org/wiki/Category:%E7%BB%8F%E6%B5%8E%E5%AD%A6')
+    # 政治
+    # candidates.append('https://zh.wikipedia.org/zh-cn/Category:%E6%94%BF%E6%B2%BB')
+    # 政治学
+    # candidates.append('https://zh.wikipedia.org/wiki/Category:%E6%94%BF%E6%B2%BB%E5%AD%B8')
 
     def load_npy(self):
-        if os.path.exists('../orgin_page/has_viewd.npy'):
-            self.has_viewd = np.load('../orgin_page/has_viewd.npy').tolist()
+        if os.path.exists('../origin_page/has_viewd.npy'):
+            self.has_viewd = np.load('../origin_page/has_viewd.npy').tolist()
 
     def save_has_viewd(self):
-        np.save('../orgin_page/has_viewd.npy',self.has_viewd)
+        np.save('../origin_page/has_viewd.npy',self.has_viewd)
 
     def add_candidate(self, url):
         # 注意，执行该函数说明获得了一个新的请求，需要待处理（从分类或内容页面解析得到的链接）

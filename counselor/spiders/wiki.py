@@ -2,7 +2,7 @@
 import scrapy
 from scrapy.selector import Selector
 from items import ContentItem
-from queue import Queue
+from custom_queue import Queue
 import time
 from langconv import *
 from filter_words import filter_url
@@ -43,7 +43,8 @@ class WiKiSpider(scrapy.Spider):
     urlQueue = Queue()
     name = 'wikipieda_spider'
     allowed_domains = ['zh.wikipedia.org']
-    start_urls = ['https://zh.wikipedia.org/wiki/Category:%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BC%96%E7%A8%8B']
+    # start_urls = ['https://zh.wikipedia.org/wiki/Category:%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BC%96%E7%A8%8B']
+    start_urls = ['https://zh.wikipedia.org/wiki/Category:%E7%BB%8F%E6%B5%8E']
     custom_settings = {
         'ITEM_PIPELINES': {'counselor.pipelines.WikiPipeline': 800}
     }
@@ -81,9 +82,18 @@ class WiKiSpider(scrapy.Spider):
         sel = Selector(response)
         this_url = response.url
         self.urlQueue.delete_candidate(this_url)
-        search = sel.xpath("//div[@id='content']")
-        category_entity = search.xpath("//h1[@id='firstHeading']/text()").extract_first()
-        candidate_lists_ = search.xpath("//div[@class='mw-category-generated']//a/@href").extract()
+        # search = sel.xpath("//div[@id='content']")
+        # category_entity = search.xpath("//h1[@id='firstHeading']/text()").extract_first()
+        # candidate_lists_ = search.xpath("//div[@class='mw-category-generated']//a/@href").extract()
+        # === 修正代码 ===
+        # 1. 获取标题（修正 search 或直接获取）
+        # 维基百科现在的结构是 <main id="content">，或者直接通过 id 获取标题
+        category_entity = response.xpath("//h1[@id='firstHeading']/text()").extract_first()
+        # 2. 获取链接
+        # 直接在 response 中查找 class="mw-category-generated" 的 div
+        # 这个 div 包含了所有的“子分类”和“分类中的页面”链接
+        candidate_lists_ = response.xpath("//div[@class='mw-category-generated']//a/@href").extract()
+        # ================
         candidate_lists = []
         # 百科页面有许多超链接是锚链接，需要过滤掉
         for url in candidate_lists_:
@@ -126,11 +136,33 @@ class WiKiSpider(scrapy.Spider):
         this_url = response.url
         self.urlQueue.delete_candidate(this_url)
         # print('this_url=', this_url)
-        search = sel.xpath("//div[@id='content']")
-        content_entity = search.xpath("//h1[@id='firstHeading']/text()").extract_first()
+        
+        # search = sel.xpath("//div[@id='content']")
+        # content_entity = search.xpath("//h1[@id='firstHeading']/text()").extract_first()
+        # content_entity = Traditional2Simplified(content_entity)
+        # content_page = search.xpath("//div[@id='bodyContent']//div[@id='mw-content-text']//div[@class='mw-parser-output']").extract_first()# 将带有html的标签的整个数据拿下，后期做处理
+        # cates = search.xpath("//div[@id='catlinks']//ul//a/text()").extract()
+        # === 修正代码开始 ===
+         # 1. 获取标题 (修复：使用 //text() 获取所有子标签内的文本，并拼接)
+        # 维基百科现在的标题往往包裹在 span 标签内
+        content_entity_list = response.xpath("//h1[@id='firstHeading']//text()").extract()
+        content_entity = "".join(content_entity_list).strip()
+        
+        # 2. 安全检查
+        if not content_entity:
+            print(f"Warning: Failed to extract title from {this_url}")
+            return None
+
         content_entity = Traditional2Simplified(content_entity)
-        content_page = search.xpath("//div[@id='bodyContent']//div[@id='mw-content-text']//div[@class='mw-parser-output']").extract_first()# 将带有html的标签的整个数据拿下，后期做处理
-        cates = search.xpath("//div[@id='catlinks']//ul//a/text()").extract()
+
+        # 3. 获取内容主体 (修复：使用 contains 匹配 class，因为 class 可能包含 mw-content-ltr 等其他属性)
+        # 我们直接查找带有 mw-parser-output 类的 div，这是最核心的内容区
+        content_page = response.xpath("//div[contains(@class, 'mw-parser-output')]").extract_first()
+        
+        # 4. 获取分类 (保持不变)
+        cates = response.xpath("//div[@id='catlinks']//ul//a/text()").extract()
+        # === 修正代码结束 ===
+    
         # candidate_lists_ = search.xpath("//div[@id='bodyContent']//*[@id='mw-content-text' and not(@class='references') and not(@role='presentation')]//a/@href").extract()
         # candidate_lists = []
         # 百科页面有许多超链接是锚链接，需要过滤掉
